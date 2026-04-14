@@ -1,0 +1,14 @@
+export default function handler(req, res) {
+  res.json({
+    id: "meu.addon",
+    version: "1.0.0",
+    name: "Meu Catálogo",
+    resources: ["catalog", "meta", "stream"],
+    types: ["movie", "series"],
+    catalogs: [
+      { type: "movie", id: "acao", name: "🔥 Ação" },
+      { type: "movie", id: "drama", name: "🎭 Drama" },
+      { type: "series", id: "fantasia", name: "📺 Séries" }
+    ]
+  })
+}

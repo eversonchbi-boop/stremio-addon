@@ -1,16 +1,29 @@
-import { getRows } from './_csv.js';
-function setCors(r) { r.setHeader('Access-Control-Allow-Origin','*'); r.setHeader('Content-Type','application/json'); }
+import { getData } from "./_csv.js";
+
 export default async function handler(req, res) {
-  setCors(res);
-  const type = req.query.type;
-  const rawId = (req.query.id||'').replace('.json','');
-  const category = rawId.split('-').pop();
-  try {
-    const rows = await getRows();
-    const seen = new Set();
-    const metas = rows.filter(r=>r.type===type&&r.category===category)
-      .filter(r=>{ if(seen.has(r.id))return false; seen.add(r.id); return true; })
-      .map(r=>({ id:'csv:'«r.id, type:r.type, name:r.title, year:r.year||undefined, poster:"ui.avatars.io/api/bots??username="+encodeURIComponent(r.title), posterShape:'poster' }));
-    res.end(JSON.stringify({metas}));
-  } catch(e) { res.status(500).end(JSON.stringify({error:e.message})); }
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type");
+  const id = searchParams.get("id");
+
+  const rows = await getData();
+
+  const items = rows.map(r => ({
+    id: r[0],
+    type: r[1],
+    title: r[2],
+    category: r[6]
+  }));
+
+  const filtered = items.filter(i => i.type === type && i.category === id);
+
+  const unique = {};
+  filtered.forEach(i => unique[i.id] = i);
+
+  const metas = Object.values(unique).map(i => ({
+    id: i.id,
+    type: i.type,
+    name: i.title
+  }));
+
+  res.json({ metas });
 }

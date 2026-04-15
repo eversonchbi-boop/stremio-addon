@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+
 
 const CSV_URL =
   'https://docs.google.com/spreadsheets/d/1w4Aoszpli2vz7FowLuMYgYwgEpn5GUkhUk9WrQK2E0c/export?format=csv&gid=0';

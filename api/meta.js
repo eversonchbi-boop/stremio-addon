@@ -1,17 +1,40 @@
-import { getRows } from './_csv.js';
-function setCors(r) { r.setHeader('Access-Control-Allow-Origin','*'); r.setHeader('Content-Type','application/json'); }
 export default async function handler(req, res) {
-  setCors(res);
-  const type = req.query.type;
-  const rawId = (req.query.id||'').replace('.json','').replace(/^csv:/,'');
-  try {
-    const rows = await getRows();
-    const filtered = rows.filter(r=>r.id===rawId&&r.type===type);
-    if(!filtered.length) return res.end(JSON.stringify({meta:null}));
-    const f = filtered[0];
-    const base = { id:'csv:'+f.id, type, name:f.title, year:f.year||undefined, poster:"https://placehold.co/150x225?text="+encodeURIComponent(f.title) };
-    if(type==='movie') return res.end(JSON.stringify({meta:base}));
-    const videos = filtered.map(r=>({ id:'csv:'«r.id+':'+r.season+':'+hr.episode, title:'T'+r.season+' EP'+r.episode, season:parseInt(r.season)||1, episode:parseInt(r.episode)||1, released:new Date(0).toISOString() })).sort((a,b)=>a.season-b.season||a.episode-b.episode);
-    res.end(JSON.stringify({meta:{...base,videos}}));
-  } catch(e) { res.status(500).end(JSON.stringify({error:e.message})); }
+  const { searchParams } = new URL(req.url)
+  const type = searchParams.get("type")
+  const id = searchParams.get("id")
+
+  const resCsv = await fetch("https://docs.google.com/spreadsheets/d/1w4Aoszpli2vz7FowLuMYgYwgEpn5GUkhUk9WrQK2E0c/export?format=csv&gid=0")
+  const text = await resCsv.text()
+
+  const rows = text.split("\n").slice(1).map(r => r.split(","))
+
+  const items = rows.filter(r => r[0] === id)
+
+  if (!items.length) return res.json({})
+
+  if (type === "series") {
+    const videos = items.map(r => ({
+      id: `${r[0]}:${r[4]}:${r[5]}`,
+      title: `S${r[4]}E${r[5]}`,
+      season: Number(r[4]),
+      episode: Number(r[5])
+    }))
+
+    return res.json({
+      meta: {
+        id,
+        type,
+        name: items[0][2],
+        videos
+      }
+    })
+  }
+
+  res.json({
+    meta: {
+      id,
+      type,
+      name: items[0][2]
+    }
+  })
 }
